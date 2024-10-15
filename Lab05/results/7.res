@@ -1,0 +1,27 @@
+part
+mint bisque chiffon snow firebrick
+wheat blush forest metallic navajo
+almond lemon olive smoke moccasin
+navajo lavender dim puff bisque
+cream white navajo frosted puff
+rose chiffon chocolate lace papaya
+slate bisque black orange steel
+lawn burnished smoke wheat snow
+medium gainsboro lawn coral peach
+turquoise bisque wheat cornflower forest
+rose black peach orchid cyan
+purple burlywood pale cornsilk chartreuse
+black mint olive drab medium
+dark white slate honeydew maroon
+beige frosted cyan hot puff
+grey blanched mint firebrick snow
+burlywood smoke tan steel royal
+dodger beige wheat orchid navy
+thistle puff pink cream orange
+slate black smoke pale moccasin
+red chartreuse firebrick burlywood papaya
+black pink plum blanched linen
+lawn navajo white honeydew steel
+sandy antique papaya forest powder
+thistle peach cornflower red peru
+antique gainsboro light magenta brown
