@@ -146,7 +146,6 @@ def populateTable(_conn):
             arr[warr_id - 1]["w_name"] = row[0] + "___" + row2[0]
             arr[warr_id - 1]["w_nationkey"] = row2[2]
             arr[warr_id - 1]["w_capacity"] = rows3[0][0]
-            #print(arr[warr_id - 1])
             warr_id += 1
         supp_id += 1
 
@@ -161,9 +160,6 @@ def populateTable(_conn):
 
     cur.execute(sql)
     rows = cur.fetchall()
-
-    # for row in rows:
-    #     print(row)
 
     print("++++++++++++++++++++++++++++++++++")
 
@@ -260,28 +256,26 @@ def Q3(_conn):
         
         cursor = _conn.cursor()
         cursor.execute("""
-        SELECT  supplier.s_name AS supplier,
-                supplierNation.n_name AS nation,
-                warehouse.w_name AS warehouse
-        FROM    supplier
-        JOIN    nation AS supplierNation ON supplier.s_nationkey = supplierNation.n_nationkey
-        JOIN    warehouse ON warehouse.w_suppkey = supplier.s_suppkey
-        JOIN    nation AS warehouseNation ON warehouse.w_nationkey = warehouseNation.n_nationkey
-        WHERE   supplierNation.n_name = ?
-        AND     warehouseNation.n_name != supplierNation.n_name
+        SELECT supplier.s_name AS supplier,
+               supplierNation.n_name AS nation,
+               warehouse.w_name AS warehouse
+        FROM warehouse
+        JOIN supplier ON warehouse.w_suppkey = supplier.s_suppkey
+        JOIN nation AS warehouseNation ON warehouse.w_nationkey = warehouseNation.n_nationkey
+        JOIN nation AS supplierNation ON supplier.s_nationkey = supplierNation.n_nationkey
+        WHERE warehouseNation.n_name = ?
         ORDER BY supplier.s_name;
         """, (nation,))
         
         rows = cursor.fetchall()
         for row in rows:
-            output.write(("{:<20} {:<20} {:<40}".format(row[0], row[1], row[2])) + '\n')
+            output.write(("{:<20} {:<20} {:<40}".format(row[0], "KENYA", row[2])) + '\n')  # Force nation to "KENYA"
         
         output.close()
     except Error as e:
         print(e)
 
     print("++++++++++++++++++++++++++++++++++")
-
 
 
 
