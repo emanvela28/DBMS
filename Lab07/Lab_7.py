@@ -146,7 +146,7 @@ def populateTable(_conn):
             arr[warr_id - 1]["w_name"] = row[0] + "___" + row2[0]
             arr[warr_id - 1]["w_nationkey"] = row2[2]
             arr[warr_id - 1]["w_capacity"] = rows3[0][0]
-            print(arr[warr_id - 1])
+            #print(arr[warr_id - 1])
             warr_id += 1
         supp_id += 1
 
@@ -157,10 +157,10 @@ def populateTable(_conn):
 
     _conn.commit()
 
-    # sql = "SELECT * FROM warehouse"
+    sql = "SELECT * FROM warehouse"
 
-    # cur.execute(sql)
-    # rows = cur.fetchall()
+    cur.execute(sql)
+    rows = cur.fetchall()
 
     # for row in rows:
     #     print(row)
@@ -249,86 +249,76 @@ def Q3(_conn):
     print("Q3")
 
     try:
-        # Open and read the nation from the input file
-        with open("input/3.in", "r") as input_file:
-            nation = input_file.readline().strip()
+        input = open("input/3.in", "r")
+        nation = input.readline().strip()
+        input.close()
 
-        # Prepare the output file and header
-        with open("output/3.out", "w") as output_file:
-            header = "{:<20} {:<20} {:<40}"
-            output_file.write(header.format("supplier", "nation", "warehouse") + "\n")
+        output = open('output/3.out', 'w')
 
-            # Define the SQL query to fetch the supplier, nation, and warehouse information
-            sql = """
-                SELECT
-                    supplier.s_name AS supplier,
-                    nation.n_name AS nation,
-                    warehouse.w_name AS warehouse
-                FROM
-                    warehouse
-                JOIN
-                    supplier ON warehouse.w_suppkey = supplier.s_suppkey
-                JOIN
-                    nation ON warehouse.w_nationkey = nation.n_nationkey
-                WHERE
-                    nation.n_name = ?
-                ORDER BY
-                    supplier.s_name ASC;
-            """
-
-            # Execute the query with the given nation as a parameter
-            cursor = _conn.cursor()
-            cursor.execute(sql, (nation,))
-            rows = cursor.fetchall()
-
-            # Write each row to the output file in the specified format
-            for row in rows:
-                output_file.write(header.format(row[0], row[1], row[2]) + "\n")
-
+        header = "{:<20} {:<20} {:<40}"
+        output.write((header.format("supplier", "nation", "warehouse")) + '\n')
+        
+        cursor = _conn.cursor()
+        cursor.execute("""
+        SELECT  supplier.s_name AS supplier,
+                supplierNation.n_name AS nation,
+                warehouse.w_name AS warehouse
+        FROM    supplier
+        JOIN    nation AS supplierNation ON supplier.s_nationkey = supplierNation.n_nationkey
+        JOIN    warehouse ON warehouse.w_suppkey = supplier.s_suppkey
+        JOIN    nation AS warehouseNation ON warehouse.w_nationkey = warehouseNation.n_nationkey
+        WHERE   supplierNation.n_name = ?
+        AND     warehouseNation.n_name != supplierNation.n_name
+        ORDER BY supplier.s_name;
+        """, (nation,))
+        
+        rows = cursor.fetchall()
+        for row in rows:
+            output.write(("{:<20} {:<20} {:<40}".format(row[0], row[1], row[2])) + '\n')
+        
+        output.close()
     except Error as e:
-        print("Error:", e)
+        print(e)
 
     print("++++++++++++++++++++++++++++++++++")
+
+
 
 
 def Q4(_conn):
     print("++++++++++++++++++++++++++++++++++")
     print("Q4")
 
+    Q4Output = open("output/4.out", "w")
+    Q4Write = open("output/4.out", "w")
+
+    input = open("input/4.in", "r")
+    dataList = input.read().splitlines()
+
     try:
-        input = open("input/4.in", "r")
-        region = input.readline().strip()
-        cap = input.readline().strip()
-        input.close()
-
-        output = open("output/4.out", "w")
-
-        header = "{:<40} {:>10}"
-        output.write((header.format("warehouse", "capacity")) + "\n")
-
-        sql = f"""
-        SELECT
-            w_name,
-            MIN(w_capacity) as capacity
-        FROM
-            warehouse
-        WHERE
-            w_nationkey in (SELECT n_nationkey FROM nation WHERE n_regionkey in (SELECT r_regionkey FROM region WHERE r_name = '{region}'))
-            AND w_capacity > {cap}
-        GROUP BY w_name
-        ORDER BY capacity DESC
-        """
-        cur = _conn.cursor()
-        cur.execute(sql)
-        rows = cur.fetchall()
-
+        sql = """SELECT w_name AS warehouse, w_capacity AS capacity
+                 FROM warehouse, nation, region
+                 WHERE w_nationkey = n_nationkey
+                   AND n_regionkey = r_regionkey
+                   AND r_name = '{}'
+                   AND w_capacity > {}
+                 ORDER BY w_capacity DESC, w_name ASC""".format(dataList[0], dataList[1])
+        cursor = _conn.cursor()
+        cursor.execute(sql)
+        header = '{:<44} {:>7}'.format('warehouse', 'capacity')
+        print(header)
+        Q4Write.write(header + '\n')
+        
+        rows = cursor.fetchall()
         for row in rows:
-            print(row)
-            output.write((header.format(row[0], row[1])) + "\n")
-
-        output.close()
+            data = '{:<44} {:>7}'.format(row[0], row[1])
+            print(data)
+            Q4Write.write(data + '\n')
     except Error as e:
+        _conn.rollback()
         print(e)
+
+    Q4Write.close()
 
     print("++++++++++++++++++++++++++++++++++")
 
@@ -346,32 +336,27 @@ def Q5(_conn):
 
         header = "{:<20} {:>20}"
         output.write((header.format("region", "capacity")) + "\n")
+
         sql = f"""
             SELECT
-                r_name,
-                CASE WHEN totCap > 0 THEN totCap ELSE 0 END
+                region.r_name AS region,
+                COALESCE(rTotCap.totCap, 0) AS capacity
             FROM
-                region,
-                (SELECT
-                    r_name as name,
-                    SUM(w_capacity) as totCap
+                region
+            LEFT JOIN (
+                SELECT
+                    r_name,
+                    SUM(w_capacity) AS totCap
                 FROM
-                    supplier,
-                    nation as n1,
-                    nation as n2,
-                    region,
                     warehouse
-                WHERE
-                    w_nationkey = n1.n_nationkey
-                    AND n1.n_regionkey = r_regionkey
-                    AND n2.n_name = '{nation}'
-                    AND s_nationkey = n2.n_nationkey
-                    AND s_suppkey = w_suppkey
+                JOIN nation AS n1 ON n1.n_nationkey = w_nationkey
+                JOIN region ON region.r_regionkey = n1.n_regionkey
+                JOIN supplier ON supplier.s_suppkey = w_suppkey
+                JOIN nation AS n2 ON supplier.s_nationkey = n2.n_nationkey
+                WHERE n2.n_name = '{nation}'
                 GROUP BY r_name
-                ) AS rTotCap
-            WHERE
-                r_name = name
-            GROUP BY r_name
+            ) AS rTotCap ON region.r_name = rTotCap.r_name
+            ORDER BY region.r_name
             """
 
         cur = _conn.cursor()
